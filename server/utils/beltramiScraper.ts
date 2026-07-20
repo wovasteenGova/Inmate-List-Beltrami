@@ -55,6 +55,7 @@ export interface InmateCharge {
 export interface InmateDetail {
   bookId: string;
   imageUrl: string | null;
+  bookingDate: string | null;
   charges: InmateCharge[];
   selectedCellIndex: number | null;
 }
@@ -433,6 +434,7 @@ function detailFromHtml(html: string, bookId: string, rowIndex: number): InmateD
   return {
     bookId,
     imageUrl: parseDetailMugshotUrl(html),
+    bookingDate: parseDetailBookingDate(html),
     charges: parseDetailCharges(html),
     selectedCellIndex: rowIndex,
   };
@@ -462,6 +464,12 @@ function parseDetailMugshotUrl(html: string): string | null {
   const src = (img.attr("src") ?? "").trim();
   if (!src || !src.includes("frmHandle.aspx")) return null;
   return normalizeSiteUrl(src);
+}
+
+function parseDetailBookingDate(html: string): string | null {
+  const $ = cheerio.load(html);
+  const custody = $("#_ctl0_CpnlMain_ctrlUsrInmateDtl_txtCustody").text().trim();
+  return custody || null;
 }
 
 async function postSelectGridRow(
@@ -579,6 +587,7 @@ function emptyDetail(item: InmateDetailRequestItem): InmateDetail {
   return {
     bookId: item.bookId.trim(),
     imageUrl: null,
+    bookingDate: null,
     charges: [],
     selectedCellIndex: item.rowIndex,
   };
@@ -718,6 +727,7 @@ export async function fetchInmateDetailsBatch(
         return {
           bookId,
           imageUrl: parseDetailMugshotUrl(detailHtml),
+          bookingDate: parseDetailBookingDate(detailHtml),
           charges: [],
           selectedCellIndex: item.rowIndex,
         };

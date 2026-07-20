@@ -8,6 +8,7 @@ const PHOTO_PREFETCH = 24;
 type ResultRow = InmateRecord & {
   rowIndex: number;
   imageUrl: string | null;
+  bookingDate: string | null;
   photoLoading: boolean;
   photoQueued: boolean;
   charges: InmateCharge[] | null;
@@ -68,8 +69,13 @@ function updatePhotoProgress() {
     total;
 }
 
-function applyPhoto(row: ResultRow, imageUrl: string | null) {
+function applyPhoto(
+  row: ResultRow,
+  imageUrl: string | null,
+  bookingDate: string | null = null,
+) {
   row.imageUrl = imageUrl;
+  if (bookingDate) row.bookingDate = bookingDate;
   row.photoLoading = false;
 }
 
@@ -77,10 +83,12 @@ function applyDetail(
   row: ResultRow,
   detail: {
     imageUrl: string | null;
+    bookingDate: string | null;
     charges: InmateCharge[];
   },
 ) {
   row.imageUrl = detail.imageUrl ?? row.imageUrl;
+  if (detail.bookingDate) row.bookingDate = detail.bookingDate;
   row.charges = detail.charges;
   row.photoLoading = false;
   row.detailLoading = false;
@@ -128,7 +136,7 @@ async function flushPhotoQueue(generation: number) {
     const byId = new Map(details.map((detail) => [detail.bookId, detail]));
     for (const row of batchRows) {
       const detail = byId.get(row.bookId);
-      applyPhoto(row, detail?.imageUrl ?? null);
+      applyPhoto(row, detail?.imageUrl ?? null, detail?.bookingDate ?? null);
     }
   } catch {
     if (generation !== photoLoaderGeneration) return;
@@ -247,6 +255,7 @@ async function onSearch() {
       ...record,
       rowIndex,
       imageUrl: null,
+      bookingDate: null,
       photoLoading: true,
       photoQueued: false,
       charges: null,
@@ -415,7 +424,7 @@ onBeforeUnmount(() => {
             <span class="inmate-row__name">Name</span>
             <span class="inmate-row__cell">Booking #</span>
             <span class="inmate-row__cell">Cell</span>
-            <span class="inmate-row__cell">DOB</span>
+            <span class="inmate-row__cell">Booking Date</span>
             <span class="inmate-row__cell inmate-row__cell--narrow">Age</span>
             <span class="inmate-row__cell inmate-row__cell--narrow">Sex</span>
             <span class="inmate-row__cell inmate-row__cell--narrow">Race</span>
@@ -432,27 +441,27 @@ onBeforeUnmount(() => {
               root: 'space-y-2',
               item: 'border border-[var(--border)] rounded-[var(--radius-sm)] bg-[var(--surface-2)] overflow-hidden data-[state=open]:ring-1 data-[state=open]:ring-[var(--accent-soft)]',
               trigger:
-                'w-full px-3 py-2.5 hover:bg-[rgba(45,74,62,0.04)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--accent)]',
+                'inmate-accordion-trigger w-full hover:bg-[rgba(45,74,62,0.04)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--accent)]',
+              label: 'inmate-accordion-label',
               content: 'border-t border-[var(--border)] bg-[var(--surface)]',
               body: 'p-0',
             }"
           >
-            <template #leading="{ item }">
-              <div :data-book-id="item.bookId" class="inmate-row__photo">
-                <InmateAvatar
-                  :image-url="item.imageUrl"
-                  :loading="item.photoLoading"
-                  :alt="`Booking photo for ${item.displayName}`"
-                />
-              </div>
-            </template>
-
             <template #default="{ item }">
               <div class="inmate-row inmate-row--trigger">
+                <div :data-book-id="item.bookId" class="inmate-row__photo">
+                  <InmateAvatar
+                    :image-url="item.imageUrl"
+                    :loading="item.photoLoading"
+                    :alt="`Booking photo for ${item.displayName}`"
+                  />
+                </div>
                 <span class="inmate-row__name">{{ item.displayName }}</span>
                 <span class="inmate-row__cell">{{ item.bookingNumber }}</span>
                 <span class="inmate-row__cell">{{ item.cellLocation }}</span>
-                <span class="inmate-row__cell">{{ item.dob }}</span>
+                <span class="inmate-row__cell">{{
+                  item.bookingDate || "—"
+                }}</span>
                 <span class="inmate-row__cell inmate-row__cell--narrow">{{
                   item.age != null ? item.age : "—"
                 }}</span>
@@ -468,6 +477,8 @@ onBeforeUnmount(() => {
                 <span class="inmate-row__cell">{{ item.spn }}</span>
               </div>
             </template>
+
+            <template #trailing />
 
             <template #content="{ item }">
               <InmateChargesBlock

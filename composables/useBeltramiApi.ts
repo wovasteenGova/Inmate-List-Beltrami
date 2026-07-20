@@ -24,6 +24,7 @@ export interface InmateCharge {
 export interface InmateDetail {
   bookId: string;
   imageUrl: string | null;
+  bookingDate: string | null;
   charges: InmateCharge[];
   selectedCellIndex: number | null;
 }

@@ -303,6 +303,9 @@ body {
 }
 
 .results-accordion {
+  --inmate-grid-cols: 3.75rem minmax(7rem, 1.4fr) repeat(8, minmax(3.5rem, 0.8fr));
+  --inmate-grid-gap: 0.45rem 0.65rem;
+  --inmate-row-pad: 0.45rem 0.85rem 0.45rem 0.35rem;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -314,15 +317,15 @@ body {
 
 .inmate-row {
   display: grid;
-  grid-template-columns: 3.75rem minmax(7rem, 1.4fr) repeat(7, minmax(3.5rem, 0.8fr));
-  gap: 0.45rem 0.65rem;
+  grid-template-columns: var(--inmate-grid-cols);
+  gap: var(--inmate-grid-gap);
   align-items: center;
   width: 100%;
   min-width: 0;
 }
 
 .inmate-row--head {
-  padding: 0.45rem 0.85rem 0.45rem 0.35rem;
+  padding: var(--inmate-row-pad);
   font-size: 0.68rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -333,10 +336,22 @@ body {
   border-radius: var(--radius-sm);
 }
 
+.inmate-accordion-trigger {
+  display: grid !important;
+  grid-template-columns: var(--inmate-grid-cols);
+  gap: var(--inmate-grid-gap);
+  align-items: center;
+  padding: var(--inmate-row-pad);
+  text-align: left;
+}
+
+.inmate-accordion-label,
 .inmate-row--trigger {
-  flex: 1;
+  display: contents;
+}
+
+.inmate-row--trigger {
   font-size: 0.875rem;
-  grid-template-columns: minmax(7rem, 1.4fr) repeat(8, minmax(3.5rem, 0.8fr));
 }
 
 .inmate-row__photo {
@@ -453,17 +468,20 @@ body {
 }
 
 @media (max-width: 960px) {
+  .results-accordion {
+    --inmate-grid-cols: 3.25rem 1fr;
+    --inmate-grid-gap: 0.35rem 0.75rem;
+    --inmate-row-pad: 0.65rem 0.75rem;
+  }
+
   .inmate-row--head {
     display: none;
   }
 
-  .inmate-row,
-  .inmate-row--trigger {
-    grid-template-columns: 3.25rem 1fr;
+  .inmate-accordion-trigger {
     grid-template-areas:
       "photo name"
       "photo meta";
-    gap: 0.35rem 0.75rem;
   }
 
   .inmate-row__photo {
