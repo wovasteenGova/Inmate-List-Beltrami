@@ -326,7 +326,7 @@ onBeforeUnmount(() => {
     <header class="header">
       <div class="header__inner">
         <div class="header__brand">
-          <span class="header__mark" aria-hidden="true" />
+          <BeltramiHeaderMark />
           <div>
             <h1 class="header__title">Inmate List Beltrami</h1>
             <p class="header__subtitle">Beltrami County, Minnesota</p>
