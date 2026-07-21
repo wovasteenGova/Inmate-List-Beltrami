@@ -1,9 +1,19 @@
 import * as vue from 'vue';
 import { defineComponent, ref, computed, watch, unref, isRef, withCtx, createVNode, toDisplayString, useSlots, mergeProps, renderSlot, openBlock, createBlock, createCommentVNode, createTextVNode, Fragment, renderList, toRefs, withKeys, nextTick, useSSRContext } from 'vue';
-import { ssrRenderAttrs, ssrRenderAttr, ssrIncludeBooleanAttr, ssrLooseContain, ssrLooseEqual, ssrInterpolate, ssrRenderClass, ssrRenderComponent, ssrRenderList, ssrRenderSlot } from 'vue/server-renderer';
-import { f as useComponentProps, g as useAppConfig, h as useForwardProps, t as tv, j as get, k as _sfc_main$d, c as useForwardExpose, P as Primitive, b as injectConfigProviderContext, d as createContext, e as Presence_default, i as isNullish, l as useRuntimeConfig } from './server.mjs';
+import { ssrRenderAttrs, ssrRenderComponent, ssrRenderAttr, ssrIncludeBooleanAttr, ssrLooseContain, ssrLooseEqual, ssrInterpolate, ssrRenderClass, ssrRenderList, ssrRenderSlot } from 'vue/server-renderer';
+import { m as publicAssetsURL, M as isEqual } from '../_/nitro.mjs';
+import { _ as _export_sfc, f as useComponentProps, g as useAppConfig, h as useForwardProps, t as tv, j as get, k as _sfc_main$d, c as useForwardExpose, P as Primitive, b as injectConfigProviderContext, d as createContext, e as Presence_default, i as isNullish, l as useRuntimeConfig } from './server.mjs';
 import { reactivePick, useVModel, useEventListener } from '@vueuse/core';
-import { M as isEqual } from '../_/nitro.mjs';
+import 'cheerio';
+import 'node:http';
+import 'node:https';
+import 'node:events';
+import 'node:buffer';
+import '@iconify/utils';
+import 'node:crypto';
+import 'consola';
+import 'node:fs';
+import 'node:path';
 import 'vue-router';
 import '@iconify/vue';
 import 'tailwindcss/colors';
@@ -15,16 +25,6 @@ import 'vue-bundle-renderer/runtime';
 import 'unhead/server';
 import 'devalue';
 import 'unhead/utils';
-import 'cheerio';
-import 'node:http';
-import 'node:https';
-import 'node:events';
-import 'node:buffer';
-import '@iconify/utils';
-import 'node:crypto';
-import 'consola';
-import 'node:fs';
-import 'node:path';
 
 function isValueEqualOrExist(base, current) {
   if (isNullish(base)) return false;
@@ -668,6 +668,18 @@ var AccordionTrigger_vue_vue_type_script_setup_true_lang_default = /* @__PURE__ 
   }
 });
 var AccordionTrigger_default = AccordionTrigger_vue_vue_type_script_setup_true_lang_default;
+const _imports_0 = publicAssetsURL("/header-mark-minnesota.png");
+const _sfc_main$4 = {};
+function _sfc_ssrRender(_ctx, _push, _parent, _attrs) {
+  _push(`<div${ssrRenderAttrs(mergeProps({ class: "header__mark" }, _attrs))}><img class="header__mark-img"${ssrRenderAttr("src", _imports_0)} alt="" width="48" height="48" decoding="async"></div>`);
+}
+const _sfc_setup$4 = _sfc_main$4.setup;
+_sfc_main$4.setup = (props, ctx) => {
+  const ssrContext = useSSRContext();
+  (ssrContext.modules || (ssrContext.modules = /* @__PURE__ */ new Set())).add("components/BeltramiHeaderMark.vue");
+  return _sfc_setup$4 ? _sfc_setup$4(props, ctx) : void 0;
+};
+const __nuxt_component_0 = /* @__PURE__ */ Object.assign(_export_sfc(_sfc_main$4, [["ssrRender", _sfc_ssrRender]]), { __name: "BeltramiHeaderMark" });
 const theme = {
   "slots": {
     "root": "w-full",
@@ -1181,7 +1193,7 @@ _sfc_main$2.setup = (props, ctx) => {
   (ssrContext.modules || (ssrContext.modules = /* @__PURE__ */ new Set())).add("components/InmateAvatar.vue");
   return _sfc_setup$2 ? _sfc_setup$2(props, ctx) : void 0;
 };
-const __nuxt_component_1 = Object.assign(_sfc_main$2, { __name: "InmateAvatar" });
+const __nuxt_component_2 = Object.assign(_sfc_main$2, { __name: "InmateAvatar" });
 const _sfc_main$1 = /* @__PURE__ */ defineComponent({
   __name: "InmateChargesBlock",
   __ssrInlineRender: true,
@@ -1213,7 +1225,7 @@ _sfc_main$1.setup = (props, ctx) => {
   (ssrContext.modules || (ssrContext.modules = /* @__PURE__ */ new Set())).add("components/InmateChargesBlock.vue");
   return _sfc_setup$1 ? _sfc_setup$1(props, ctx) : void 0;
 };
-const __nuxt_component_2 = Object.assign(_sfc_main$1, { __name: "InmateChargesBlock" });
+const __nuxt_component_3 = Object.assign(_sfc_main$1, { __name: "InmateChargesBlock" });
 function filtersToQuery(f) {
   const q = {};
   const last = f.lastName.trim();
@@ -1345,10 +1357,13 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
       void onAccordionChange(bookId);
     });
     return (_ctx, _push, _parent, _attrs) => {
+      const _component_BeltramiHeaderMark = __nuxt_component_0;
       const _component_UAccordion = _sfc_main$3;
-      const _component_InmateAvatar = __nuxt_component_1;
-      const _component_InmateChargesBlock = __nuxt_component_2;
-      _push(`<div${ssrRenderAttrs(_attrs)}><header class="header"><div class="header__inner"><div class="header__brand"><span class="header__mark" aria-hidden="true"></span><div><h1 class="header__title">Inmate List Beltrami</h1><p class="header__subtitle">Beltrami County, Minnesota</p></div></div><p class="header__note"> Search the current roster. Expand a row to view charges inline. </p></div></header><main class="main"><section class="panel search-panel" aria-labelledby="search-heading"><h2 id="search-heading" class="panel__title">Search</h2><form class="search-form"><div class="field-grid"><label class="field"><span class="field__label">Last name</span><input${ssrRenderAttr("value", unref(lastName))} type="text" name="last_name" autocomplete="family-name" placeholder="e.g. Smith"></label><label class="field"><span class="field__label">First name</span><input${ssrRenderAttr("value", unref(firstName))} type="text" name="first_name" autocomplete="given-name" placeholder="Optional"></label><label class="field"><span class="field__label">Gender</span><select name="gender"><option value=""${ssrIncludeBooleanAttr(Array.isArray(unref(gender)) ? ssrLooseContain(unref(gender), "") : ssrLooseEqual(unref(gender), "")) ? " selected" : ""}>Match form default</option><option value="U"${ssrIncludeBooleanAttr(Array.isArray(unref(gender)) ? ssrLooseContain(unref(gender), "U") : ssrLooseEqual(unref(gender), "U")) ? " selected" : ""}>Unknown</option><option value="M"${ssrIncludeBooleanAttr(Array.isArray(unref(gender)) ? ssrLooseContain(unref(gender), "M") : ssrLooseEqual(unref(gender), "M")) ? " selected" : ""}>Male</option><option value="F"${ssrIncludeBooleanAttr(Array.isArray(unref(gender)) ? ssrLooseContain(unref(gender), "F") : ssrLooseEqual(unref(gender), "F")) ? " selected" : ""}>Female</option></select></label><label class="field"><span class="field__label">Birth year</span><input${ssrRenderAttr("value", unref(dob))} type="text" name="dob" inputmode="numeric" maxlength="4" placeholder="yyyy"></label></div><div class="search-form__actions"><button type="submit" class="btn btn--primary"${ssrIncludeBooleanAttr(unref(loading)) ? " disabled" : ""}><span class="btn__text">Search</span>`);
+      const _component_InmateAvatar = __nuxt_component_2;
+      const _component_InmateChargesBlock = __nuxt_component_3;
+      _push(`<div${ssrRenderAttrs(_attrs)}><header class="header"><div class="header__inner"><div class="header__brand">`);
+      _push(ssrRenderComponent(_component_BeltramiHeaderMark, null, null, _parent));
+      _push(`<div><h1 class="header__title">Inmate List Beltrami</h1><p class="header__subtitle">Beltrami County, Minnesota</p></div></div><p class="header__note"> Search the current roster. Expand a row to view charges inline. </p></div></header><main class="main"><section class="panel search-panel" aria-labelledby="search-heading"><h2 id="search-heading" class="panel__title">Search</h2><form class="search-form"><div class="field-grid"><label class="field"><span class="field__label">Last name</span><input${ssrRenderAttr("value", unref(lastName))} type="text" name="last_name" autocomplete="family-name" placeholder="e.g. Smith"></label><label class="field"><span class="field__label">First name</span><input${ssrRenderAttr("value", unref(firstName))} type="text" name="first_name" autocomplete="given-name" placeholder="Optional"></label><label class="field"><span class="field__label">Gender</span><select name="gender"><option value=""${ssrIncludeBooleanAttr(Array.isArray(unref(gender)) ? ssrLooseContain(unref(gender), "") : ssrLooseEqual(unref(gender), "")) ? " selected" : ""}>Match form default</option><option value="U"${ssrIncludeBooleanAttr(Array.isArray(unref(gender)) ? ssrLooseContain(unref(gender), "U") : ssrLooseEqual(unref(gender), "U")) ? " selected" : ""}>Unknown</option><option value="M"${ssrIncludeBooleanAttr(Array.isArray(unref(gender)) ? ssrLooseContain(unref(gender), "M") : ssrLooseEqual(unref(gender), "M")) ? " selected" : ""}>Male</option><option value="F"${ssrIncludeBooleanAttr(Array.isArray(unref(gender)) ? ssrLooseContain(unref(gender), "F") : ssrLooseEqual(unref(gender), "F")) ? " selected" : ""}>Female</option></select></label><label class="field"><span class="field__label">Birth year</span><input${ssrRenderAttr("value", unref(dob))} type="text" name="dob" inputmode="numeric" maxlength="4" placeholder="yyyy"></label></div><div class="search-form__actions"><button type="submit" class="btn btn--primary"${ssrIncludeBooleanAttr(unref(loading)) ? " disabled" : ""}><span class="btn__text">Search</span>`);
       if (unref(loading)) {
         _push(`<span class="btn__spinner" aria-hidden="true"></span>`);
       } else {
@@ -1454,4 +1469,4 @@ _sfc_main.setup = (props, ctx) => {
 };
 
 export { _sfc_main as default };
-//# sourceMappingURL=index-CiPZjG1H.mjs.map
+//# sourceMappingURL=index-CnhZDGNe.mjs.map

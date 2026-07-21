@@ -312,7 +312,7 @@ body {
 }
 
 .results-accordion {
-  --inmate-grid-cols: 3.75rem minmax(7rem, 1.4fr) repeat(8, minmax(3.5rem, 0.8fr));
+  --inmate-grid-cols: 3.75rem minmax(7rem, 1.4fr) repeat(9, minmax(3.5rem, 0.8fr));
   --inmate-grid-gap: 0.45rem 0.65rem;
   --inmate-row-pad: 0.45rem 0.85rem 0.45rem 0.35rem;
   display: flex;
@@ -387,6 +387,21 @@ body {
 .inmate-row__cell--muted {
   color: var(--ink-muted);
   font-size: 0.82rem;
+}
+
+.inmate-row__meta {
+  display: none;
+}
+
+.inmate-row__meta-line {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--ink-muted);
+}
+
+.inmate-row__meta-line--muted {
+  margin-top: 0.15rem;
+  font-size: 0.78rem;
 }
 
 .photo-cell {
@@ -505,10 +520,10 @@ body {
     display: none;
   }
 
-  .inmate-row__cell--muted {
+  .inmate-row__meta {
     display: block;
     grid-area: meta;
-    white-space: normal;
+    min-width: 0;
   }
 }
 

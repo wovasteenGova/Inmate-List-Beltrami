@@ -765,7 +765,7 @@ const _routes = [
   {
     name: "index",
     path: "/",
-    component: () => import('./index-CiPZjG1H.mjs')
+    component: () => import('./index-CnhZDGNe.mjs')
   }
 ];
 const _wrapInTransition = (props, children) => {

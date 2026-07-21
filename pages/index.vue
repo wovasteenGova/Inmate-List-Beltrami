@@ -307,6 +307,17 @@ function chargesSummary(row: ResultRow) {
   return n + " charge" + (n === 1 ? "" : "s");
 }
 
+function formatDob(dob: string) {
+  const trimmed = dob.trim();
+  return trimmed || "—";
+}
+
+function formatBookingDate(row: ResultRow) {
+  if (row.bookingDate) return row.bookingDate;
+  if (row.photoLoading) return "…";
+  return "—";
+}
+
 watch(selectedBookId, (bookId) => {
   void onAccordionChange(bookId);
 });
@@ -424,7 +435,8 @@ onBeforeUnmount(() => {
             <span class="inmate-row__name">Name</span>
             <span class="inmate-row__cell">Booking #</span>
             <span class="inmate-row__cell">Cell</span>
-            <span class="inmate-row__cell">Booking Date</span>
+            <span class="inmate-row__cell">Booked</span>
+            <span class="inmate-row__cell inmate-row__cell--narrow">DOB</span>
             <span class="inmate-row__cell inmate-row__cell--narrow">Age</span>
             <span class="inmate-row__cell inmate-row__cell--narrow">Sex</span>
             <span class="inmate-row__cell inmate-row__cell--narrow">Race</span>
@@ -460,7 +472,10 @@ onBeforeUnmount(() => {
                 <span class="inmate-row__cell">{{ item.bookingNumber }}</span>
                 <span class="inmate-row__cell">{{ item.cellLocation }}</span>
                 <span class="inmate-row__cell">{{
-                  item.bookingDate || "—"
+                  formatBookingDate(item)
+                }}</span>
+                <span class="inmate-row__cell inmate-row__cell--narrow">{{
+                  formatDob(item.dob)
                 }}</span>
                 <span class="inmate-row__cell inmate-row__cell--narrow">{{
                   item.age != null ? item.age : "—"
@@ -475,6 +490,17 @@ onBeforeUnmount(() => {
                   chargesSummary(item)
                 }}</span>
                 <span class="inmate-row__cell">{{ item.spn }}</span>
+                <div class="inmate-row__meta">
+                  <p class="inmate-row__meta-line">
+                    <span>DOB {{ formatDob(item.dob) }}</span>
+                    <span> · Booked {{ formatBookingDate(item) }}</span>
+                  </p>
+                  <p
+                    class="inmate-row__meta-line inmate-row__meta-line--muted"
+                  >
+                    {{ chargesSummary(item) }}
+                  </p>
+                </div>
               </div>
             </template>
 
