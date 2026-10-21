@@ -222,6 +222,7 @@ function chargesSummary(row: ResultRow) {
   if (row.detailLoading) return "Checking charges…";
   if (!row.charges) return "Charges unavailable";
   const n = row.charges.length;
+  if (n === 0) return "0 charges found";
   return n + " charge" + (n === 1 ? "" : "s");
 }
 
