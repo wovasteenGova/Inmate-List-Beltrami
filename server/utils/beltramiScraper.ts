@@ -58,6 +58,7 @@ export interface InmateDetail {
   bookingDate: string | null;
   charges: InmateCharge[];
   selectedCellIndex: number | null;
+  error?: string;
 }
 
 export interface InmateDetailRequestItem {
@@ -590,6 +591,7 @@ function emptyDetail(item: InmateDetailRequestItem): InmateDetail {
     bookingDate: null,
     charges: [],
     selectedCellIndex: item.rowIndex,
+    error: "Detail unavailable",
   };
 }
 

@@ -2,14 +2,13 @@
 import type { AccordionItem } from "@nuxt/ui";
 import type { InmateCharge, InmateRecord } from "~/composables/useBeltramiApi";
 
-const PHOTO_BATCH_SIZE = 4;
+const DETAIL_BATCH_SIZE = 4;
 
 type ResultRow = InmateRecord & {
   rowIndex: number;
   imageUrl: string | null;
   bookingDate: string | null;
   photoLoading: boolean;
-  photoQueued: boolean;
   charges: InmateCharge[] | null;
   detailLoading: boolean;
   detailError: string | null;
@@ -17,7 +16,7 @@ type ResultRow = InmateRecord & {
 
 type InmateAccordionItem = AccordionItem & ResultRow;
 
-const { fetchInmates, fetchInmateDetail, fetchInmatePhotosBatch } =
+const { fetchInmates, fetchInmateDetail, fetchInmateDetailsBatch } =
   useBeltramiApi();
 
 const lastName = ref("");
@@ -32,11 +31,8 @@ const selectedBookId = ref<string | undefined>(undefined);
 const resultsLine = ref("");
 const message = ref<{ text: string; kind: "error" | "info" } | null>(null);
 
-const accordionListRef = ref<HTMLElement | null>(null);
-let photoObserver: IntersectionObserver | null = null;
-let photoQueue: string[] = [];
-let photoFlushTimer: ReturnType<typeof setTimeout> | null = null;
-let photoLoaderGeneration = 0;
+let searchGeneration = 0;
+let activeFilters: Record<string, string> = {};
 
 const accordionItems = computed<InmateAccordionItem[]>(() =>
   rows.value.map((row) => ({
@@ -55,27 +51,17 @@ function filterParams() {
   });
 }
 
-function updatePhotoProgress() {
+function updateDetailProgress() {
   const total = rows.value.length;
-  const done = rows.value.filter((row) => !row.photoLoading).length;
+  const done = rows.value.filter((row) => !row.detailLoading).length;
   resultsLine.value =
     total +
     " record" +
     (total === 1 ? "" : "s") +
-    " · photos " +
+    " · charge counts " +
     done +
     "/" +
     total;
-}
-
-function applyPhoto(
-  row: ResultRow,
-  imageUrl: string | null,
-  bookingDate: string | null = null,
-) {
-  row.imageUrl = imageUrl;
-  if (bookingDate) row.bookingDate = bookingDate;
-  row.photoLoading = false;
 }
 
 function applyDetail(
@@ -91,6 +77,7 @@ function applyDetail(
   row.charges = detail.charges;
   row.photoLoading = false;
   row.detailLoading = false;
+  row.detailError = null;
 }
 
 async function loadRowDetail(row: ResultRow) {
@@ -103,7 +90,7 @@ async function loadRowDetail(row: ResultRow) {
     const detail = await fetchInmateDetail(
       row.bookId,
       row.rowIndex,
-      filterParams(),
+      activeFilters,
       searchToken.value,
     );
     applyDetail(row, detail);
@@ -111,81 +98,45 @@ async function loadRowDetail(row: ResultRow) {
     row.detailLoading = false;
     row.detailError = "Charges could not be loaded.";
   } finally {
-    updatePhotoProgress();
+    updateDetailProgress();
   }
 }
 
-async function flushPhotoQueue(generation: number) {
-  if (!photoQueue.length || generation !== photoLoaderGeneration) return;
-  if (!searchToken.value) return;
+async function loadAllDetails(generation: number, token: string) {
+  for (let start = 0; start < rows.value.length; start += DETAIL_BATCH_SIZE) {
+    if (generation !== searchGeneration) return;
+    const batchRows = rows.value.slice(start, start + DETAIL_BATCH_SIZE);
 
-  const batchIds = photoQueue.splice(0, PHOTO_BATCH_SIZE);
-  const batchRows = batchIds
-    .map((bookId) => rows.value.find((row) => row.bookId === bookId))
-    .filter((row): row is ResultRow => Boolean(row));
+    try {
+      const details = await fetchInmateDetailsBatch(
+        batchRows.map((row) => ({ bookId: row.bookId, rowIndex: row.rowIndex })),
+        activeFilters,
+        token,
+      );
+      if (generation !== searchGeneration) return;
 
-  if (!batchRows.length) return;
-
-  try {
-    const details = await fetchInmatePhotosBatch(
-      batchRows.map((row) => ({ bookId: row.bookId, rowIndex: row.rowIndex })),
-      filterParams(),
-      searchToken.value,
-    );
-    if (generation !== photoLoaderGeneration) return;
-
-    const byId = new Map(details.map((detail) => [detail.bookId, detail]));
-    for (const row of batchRows) {
-      const detail = byId.get(row.bookId);
-      applyPhoto(row, detail?.imageUrl ?? null, detail?.bookingDate ?? null);
-    }
-  } catch {
-    if (generation !== photoLoaderGeneration) return;
-    for (const row of batchRows) row.photoLoading = false;
-  } finally {
-    updatePhotoProgress();
-    if (photoQueue.length && generation === photoLoaderGeneration) {
-      schedulePhotoFlush(generation);
-    }
-  }
-}
-
-function schedulePhotoFlush(generation: number) {
-  if (photoFlushTimer) return;
-  photoFlushTimer = setTimeout(() => {
-    photoFlushTimer = null;
-    void flushPhotoQueue(generation);
-  }, 16);
-}
-
-function queuePhotoLoad(bookId: string, priority = false) {
-  const row = rows.value.find((item) => item.bookId === bookId);
-  if (!row || row.photoQueued || !row.photoLoading) return;
-  row.photoQueued = true;
-  if (priority) photoQueue.unshift(bookId);
-  else photoQueue.push(bookId);
-  schedulePhotoFlush(photoLoaderGeneration);
-}
-
-function setupPhotoObserver() {
-  photoObserver?.disconnect();
-  if (!accordionListRef.value) return;
-
-  photoObserver = new IntersectionObserver(
-    (entries) => {
-      for (const entry of entries) {
-        if (!entry.isIntersecting) continue;
-        const bookId = (entry.target as HTMLElement).dataset.bookId;
-        if (bookId) queuePhotoLoad(bookId, true);
+      const byId = new Map(details.map((detail) => [detail.bookId, detail]));
+      for (const row of batchRows) {
+        const detail = byId.get(row.bookId);
+        if (detail && !detail.error) {
+          applyDetail(row, detail);
+        } else {
+          row.detailLoading = false;
+          row.photoLoading = false;
+          row.detailError = "Charges could not be loaded.";
+        }
       }
-    },
-    { root: null, rootMargin: "240px 0px", threshold: 0.01 },
-  );
-
-  for (const el of accordionListRef.value.querySelectorAll<HTMLElement>(
-    "[data-book-id]",
-  )) {
-    photoObserver.observe(el);
+    } catch {
+      if (generation !== searchGeneration) return;
+      for (const row of rows.value.slice(start)) {
+        row.detailLoading = false;
+        row.photoLoading = false;
+        row.detailError = "Charges could not be loaded.";
+      }
+      updateDetailProgress();
+      return;
+    }
+    updateDetailProgress();
   }
 }
 
@@ -195,25 +146,25 @@ async function onAccordionChange(bookId: string | undefined) {
   if (row) await loadRowDetail(row);
 }
 
+function retryRowDetail(bookId: string) {
+  const row = rows.value.find((item) => item.bookId === bookId);
+  if (row) void loadRowDetail(row);
+}
+
 async function onSearch() {
   message.value = null;
   loading.value = true;
   selectedBookId.value = undefined;
   searchToken.value = null;
-  photoLoaderGeneration += 1;
-  const generation = photoLoaderGeneration;
+  searchGeneration += 1;
+  const generation = searchGeneration;
+  activeFilters = filterParams();
   resultsLine.value = "Loading roster…";
   rows.value = [];
-  photoQueue = [];
-  photoObserver?.disconnect();
-  if (photoFlushTimer) {
-    clearTimeout(photoFlushTimer);
-    photoFlushTimer = null;
-  }
 
   try {
-    const data = await fetchInmates(filterParams());
-    if (generation !== photoLoaderGeneration) return;
+    const data = await fetchInmates(activeFilters);
+    if (generation !== searchGeneration) return;
 
     searchToken.value = data.searchToken;
     const n = data.results.length;
@@ -232,15 +183,14 @@ async function onSearch() {
       imageUrl: null,
       bookingDate: null,
       photoLoading: true,
-      photoQueued: false,
       charges: null,
-      detailLoading: false,
+      detailLoading: true,
       detailError: null,
     }));
-    updatePhotoProgress();
-    await nextTick();
-    setupPhotoObserver();
+    updateDetailProgress();
+    void loadAllDetails(generation, data.searchToken);
   } catch (e: unknown) {
+    if (generation !== searchGeneration) return;
     const text =
       e && typeof e === "object" && "data" in e
         ? JSON.stringify((e as { data: unknown }).data)
@@ -250,7 +200,7 @@ async function onSearch() {
     message.value = { kind: "error", text };
     resultsLine.value = "";
   } finally {
-    loading.value = false;
+    if (generation === searchGeneration) loading.value = false;
   }
 }
 
@@ -264,19 +214,13 @@ function onClear() {
   selectedBookId.value = undefined;
   message.value = null;
   resultsLine.value = "";
-  photoLoaderGeneration += 1;
-  photoQueue = [];
-  photoObserver?.disconnect();
-  if (photoFlushTimer) {
-    clearTimeout(photoFlushTimer);
-    photoFlushTimer = null;
-  }
+  loading.value = false;
+  searchGeneration += 1;
 }
 
 function chargesSummary(row: ResultRow) {
-  if (row.detailLoading) return "Loading…";
-  if (!row.charges) return "Tap to view";
-  if (!row.charges.length) return "None listed";
+  if (row.detailLoading) return "Checking charges…";
+  if (!row.charges) return "Charges unavailable";
   const n = row.charges.length;
   return n + " charge" + (n === 1 ? "" : "s");
 }
@@ -301,8 +245,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-  photoObserver?.disconnect();
-  if (photoFlushTimer) clearTimeout(photoFlushTimer);
+  searchGeneration += 1;
 });
 </script>
 
@@ -318,7 +261,7 @@ onBeforeUnmount(() => {
           </div>
         </div>
         <p class="header__note">
-          Search the current roster. Expand a row to view charges inline.
+          Search the current roster. Charge counts appear beneath each name as they load.
         </p>
       </div>
     </header>
@@ -401,12 +344,11 @@ onBeforeUnmount(() => {
 
         <div
           v-if="rows.length"
-          ref="accordionListRef"
           class="results-accordion"
         >
           <div class="inmate-row inmate-row--head" aria-hidden="true">
             <span class="inmate-row__photo" />
-            <span class="inmate-row__name">Name</span>
+            <span class="inmate-row__name">Name / Charges</span>
             <span class="inmate-row__cell">Booking #</span>
             <span class="inmate-row__cell">Cell</span>
             <span class="inmate-row__cell">Booked</span>
@@ -414,7 +356,6 @@ onBeforeUnmount(() => {
             <span class="inmate-row__cell inmate-row__cell--narrow">Age</span>
             <span class="inmate-row__cell inmate-row__cell--narrow">Sex</span>
             <span class="inmate-row__cell inmate-row__cell--narrow">Race</span>
-            <span class="inmate-row__cell">Charges</span>
             <span class="inmate-row__cell">SPN</span>
           </div>
 
@@ -435,14 +376,17 @@ onBeforeUnmount(() => {
           >
             <template #default="{ item }">
               <div class="inmate-row inmate-row--trigger">
-                <div :data-book-id="item.bookId" class="inmate-row__photo">
+                <div class="inmate-row__photo">
                   <InmateAvatar
                     :image-url="item.imageUrl"
                     :loading="item.photoLoading"
                     :alt="`Booking photo for ${item.displayName}`"
                   />
                 </div>
-                <span class="inmate-row__name">{{ item.displayName }}</span>
+                <span class="inmate-row__name">
+                  <span>{{ item.displayName }}</span>
+                  <span class="inmate-row__charge-count">{{ chargesSummary(item) }}</span>
+                </span>
                 <span class="inmate-row__cell">{{ item.bookingNumber }}</span>
                 <span class="inmate-row__cell">{{ item.cellLocation }}</span>
                 <span class="inmate-row__cell">{{
@@ -460,19 +404,11 @@ onBeforeUnmount(() => {
                 <span class="inmate-row__cell inmate-row__cell--narrow">{{
                   item.race
                 }}</span>
-                <span class="inmate-row__cell inmate-row__cell--muted">{{
-                  chargesSummary(item)
-                }}</span>
                 <span class="inmate-row__cell">{{ item.spn }}</span>
                 <div class="inmate-row__meta">
                   <p class="inmate-row__meta-line">
                     <span>DOB {{ formatDob(item.dob) }}</span>
                     <span> · Booked {{ formatBookingDate(item) }}</span>
-                  </p>
-                  <p
-                    class="inmate-row__meta-line inmate-row__meta-line--muted"
-                  >
-                    {{ chargesSummary(item) }}
                   </p>
                 </div>
               </div>
@@ -485,7 +421,7 @@ onBeforeUnmount(() => {
                 :charges="item.charges"
                 :loading="item.detailLoading"
                 :error="item.detailError"
-                @retry="loadRowDetail(item)"
+                @retry="retryRowDetail(item.bookId)"
               />
             </template>
           </UAccordion>

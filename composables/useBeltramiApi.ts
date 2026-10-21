@@ -27,6 +27,7 @@ export interface InmateDetail {
   bookingDate: string | null;
   charges: InmateCharge[];
   selectedCellIndex: number | null;
+  error?: string;
 }
 
 export interface InmateSearchResponse {
@@ -87,7 +88,7 @@ export function useBeltramiApi() {
     });
   }
 
-  async function fetchInmatePhotosBatch(
+  async function fetchInmateDetailsBatch(
     items: { bookId: string; rowIndex: number }[],
     filters: Record<string, string>,
     searchToken: string,
@@ -99,7 +100,7 @@ export function useBeltramiApi() {
         body: {
           ...filters,
           search_token: searchToken,
-          photos_only: true,
+          photos_only: false,
           items,
         },
         timeout: detailTimeoutMs,
@@ -108,5 +109,5 @@ export function useBeltramiApi() {
     return res.results;
   }
 
-  return { fetchInmates, fetchInmateDetail, fetchInmatePhotosBatch };
+  return { fetchInmates, fetchInmateDetail, fetchInmateDetailsBatch };
 }
