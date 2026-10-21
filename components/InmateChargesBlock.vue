@@ -4,12 +4,20 @@ import type { InmateCharge } from "~/composables/useBeltramiApi";
 defineProps<{
   charges: InmateCharge[] | null;
   loading: boolean;
+  error: string | null;
 }>();
+
+defineEmits<{ retry: [] }>();
 </script>
 
 <template>
   <div class="charges-block">
     <div v-if="loading" class="charges-block__loading">Loading charges…</div>
+
+    <div v-else-if="error" class="charges-block__empty">
+      <p>{{ error }}</p>
+      <button type="button" class="btn btn--ghost" @click="$emit('retry')">Retry</button>
+    </div>
 
     <div v-else-if="charges && charges.length" class="charges-table-wrap">
       <table class="charges-table">

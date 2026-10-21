@@ -37,7 +37,7 @@ export default defineEventHandler(async (event) => {
       photosOnly: body.photos_only !== false,
       items,
       timeoutMs: 120_000,
-      concurrency: 8,
+      concurrency: 2,
     });
     return { results };
   } catch (error: unknown) {

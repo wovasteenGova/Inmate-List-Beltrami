@@ -2,8 +2,7 @@
 import type { AccordionItem } from "@nuxt/ui";
 import type { InmateCharge, InmateRecord } from "~/composables/useBeltramiApi";
 
-const PHOTO_BATCH_SIZE = 20;
-const PHOTO_PREFETCH = 24;
+const PHOTO_BATCH_SIZE = 4;
 
 type ResultRow = InmateRecord & {
   rowIndex: number;
@@ -13,6 +12,7 @@ type ResultRow = InmateRecord & {
   photoQueued: boolean;
   charges: InmateCharge[] | null;
   detailLoading: boolean;
+  detailError: string | null;
 };
 
 type InmateAccordionItem = AccordionItem & ResultRow;
@@ -37,7 +37,6 @@ let photoObserver: IntersectionObserver | null = null;
 let photoQueue: string[] = [];
 let photoFlushTimer: ReturnType<typeof setTimeout> | null = null;
 let photoLoaderGeneration = 0;
-let photoDrainActive = false;
 
 const accordionItems = computed<InmateAccordionItem[]>(() =>
   rows.value.map((row) => ({
@@ -98,6 +97,7 @@ async function loadRowDetail(row: ResultRow) {
   if (row.detailLoading || row.charges) return;
 
   row.detailLoading = true;
+  row.detailError = null;
 
   try {
     const detail = await fetchInmateDetail(
@@ -109,6 +109,7 @@ async function loadRowDetail(row: ResultRow) {
     applyDetail(row, detail);
   } catch {
     row.detailLoading = false;
+    row.detailError = "Charges could not be loaded.";
   } finally {
     updatePhotoProgress();
   }
@@ -145,8 +146,6 @@ async function flushPhotoQueue(generation: number) {
     updatePhotoProgress();
     if (photoQueue.length && generation === photoLoaderGeneration) {
       schedulePhotoFlush(generation);
-    } else if (generation === photoLoaderGeneration) {
-      photoDrainActive = false;
     }
   }
 }
@@ -166,21 +165,6 @@ function queuePhotoLoad(bookId: string, priority = false) {
   if (priority) photoQueue.unshift(bookId);
   else photoQueue.push(bookId);
   schedulePhotoFlush(photoLoaderGeneration);
-}
-
-async function drainPhotoQueueLoop(generation: number) {
-  if (photoDrainActive || generation !== photoLoaderGeneration) return;
-  photoDrainActive = true;
-  while (photoQueue.length && generation === photoLoaderGeneration) {
-    await flushPhotoQueue(generation);
-  }
-  photoDrainActive = false;
-}
-
-function queueAllBackgroundPhotos() {
-  for (const row of rows.value) {
-    queuePhotoLoad(row.bookId, false);
-  }
 }
 
 function setupPhotoObserver() {
@@ -205,14 +189,6 @@ function setupPhotoObserver() {
   }
 }
 
-function prefetchInitialPhotos() {
-  for (const row of rows.value.slice(0, PHOTO_PREFETCH)) {
-    queuePhotoLoad(row.bookId, true);
-  }
-  queueAllBackgroundPhotos();
-  void drainPhotoQueueLoop(photoLoaderGeneration);
-}
-
 async function onAccordionChange(bookId: string | undefined) {
   if (!bookId) return;
   const row = rows.value.find((item) => item.bookId === bookId);
@@ -229,7 +205,6 @@ async function onSearch() {
   resultsLine.value = "Loading roster…";
   rows.value = [];
   photoQueue = [];
-  photoDrainActive = false;
   photoObserver?.disconnect();
   if (photoFlushTimer) {
     clearTimeout(photoFlushTimer);
@@ -260,11 +235,11 @@ async function onSearch() {
       photoQueued: false,
       charges: null,
       detailLoading: false,
+      detailError: null,
     }));
     updatePhotoProgress();
     await nextTick();
     setupPhotoObserver();
-    prefetchInitialPhotos();
   } catch (e: unknown) {
     const text =
       e && typeof e === "object" && "data" in e
@@ -291,7 +266,6 @@ function onClear() {
   resultsLine.value = "";
   photoLoaderGeneration += 1;
   photoQueue = [];
-  photoDrainActive = false;
   photoObserver?.disconnect();
   if (photoFlushTimer) {
     clearTimeout(photoFlushTimer);
@@ -510,6 +484,8 @@ onBeforeUnmount(() => {
               <InmateChargesBlock
                 :charges="item.charges"
                 :loading="item.detailLoading"
+                :error="item.detailError"
+                @retry="loadRowDetail(item)"
               />
             </template>
           </UAccordion>
