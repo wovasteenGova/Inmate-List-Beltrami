@@ -34,6 +34,8 @@ export default defineNuxtConfig({
       htmlAttrs: { lang: "en" },
       meta: [{ name: "viewport", content: "width=device-width, initial-scale=1" }],
       link: [
+        { rel: "icon", type: "image/png", href: "/header-mark-minnesota.png" },
+        { rel: "apple-touch-icon", href: "/header-mark-minnesota.png" },
         { rel: "preconnect", href: "https://fonts.googleapis.com" },
         {
           rel: "preconnect",
